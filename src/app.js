@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { clerkMiddleware } from "@clerk/express";
 import fileUpload from "express-fileupload";
 import path from "path";
+import cors from "cors";
 
 // db
 import { connectDb } from "./lib/db.js";
@@ -19,7 +20,15 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
+const VIEW_URI = process.env.VIEW_URI;
 const __dirname = path.resolve();
+
+app.use(
+  cors({
+    origin: VIEW_URI,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
@@ -46,17 +55,15 @@ app.use("/api/albums", albumsRouter);
 app.use("/api/stats", statsRouter);
 
 app.use((error, req, res, next) => {
-  res
-    .status(500)
-    .json({
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Internal Server Error"
-          : error.message,
-    });
+  res.status(500).json({
+    message:
+      process.env.NODE_ENV === "production"
+        ? "Internal Server Error"
+        : error.message,
+  });
 });
 
 app.listen(PORT, () => {
   console.log(`App is running on port ${PORT}`);
-  connectDb;
+  connectDb();
 });
