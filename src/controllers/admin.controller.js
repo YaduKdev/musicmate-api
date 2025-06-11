@@ -9,7 +9,7 @@ export const verifyAdmin = async (req, res, next) => {
 // Cloudinary Upload Function
 const uploadToCloudinary = async (file) => {
   try {
-    const upload = cloudinary.uploader.upload(file.tempFilePath, {
+    const upload = await cloudinary.uploader.upload(file.tempFilePath, {
       resource_type: "auto",
     });
 
@@ -22,7 +22,7 @@ const uploadToCloudinary = async (file) => {
 
 export const createSong = async (req, res, next) => {
   try {
-    if (!req.files || req.files.audioFile || req.files.imageFile) {
+    if (!req.files || !req.files.audioFile || !req.files.imageFile) {
       return res.status(400).json("You Havn't Uploaded All Necessary Files!");
     }
 
@@ -84,7 +84,7 @@ export const createAlbum = async (req, res, next) => {
     const { title, artist, releaseYear } = req.body;
     const { imageFile } = req.files;
 
-    const imageUrl = uploadToCloudinary(imageFile);
+    const imageUrl = await uploadToCloudinary(imageFile);
 
     const album = new Album({
       title,
