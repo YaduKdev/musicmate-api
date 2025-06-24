@@ -6,6 +6,8 @@ import path from "path";
 import cors from "cors";
 import { createServer } from "http";
 import { initializeSocket } from "./lib/socket.js";
+import cron from "node-cron";
+import fs from "fs";
 
 // db
 import { connectDb } from "./lib/db.js";
@@ -51,7 +53,24 @@ app.use(
     },
   })
 );
+//cron jobs - delete tmp files every hour
+const tmpDir = path.join(process.cwd(), "tmp");
 
+cron.schedule("0 * * * *", () => {
+  if (fs.existsSync(tmpDir)) {
+    fs.readdir(tmpDir, (err, files) => {
+      if (err) {
+        console.log("error", err);
+        return;
+      }
+      for (const file of files) {
+        fs.unlink(path.join(tmpDir, file), (err) => {});
+      }
+    });
+  }
+});
+
+//Routes
 app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
@@ -59,6 +78,17 @@ app.use("/api/songs", songsRouter);
 app.use("/api/albums", albumsRouter);
 app.use("/api/stats", statsRouter);
 
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../../musicmate-view/dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(
+      path.resolve(__dirname, "../../musicmate-view/dist/index.html")
+    );
+  });
+}
+
+//For Error Handling
 app.use((error, req, res, next) => {
   res.status(500).json({
     message:
